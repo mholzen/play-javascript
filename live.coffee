@@ -7,7 +7,8 @@ process.stdin.on 'keypress', (str, key) ->
     console.log 'reset'
     step.beat = 0
 
-{dmx, Tomshine} = require 'marc-dmx'
+# relative to ./bin
+{dmx, Tomshine} = require '../lib/fixture'
 
 f = new Tomshine 1
 f.set {dimmer:255, r: 0, g:255}

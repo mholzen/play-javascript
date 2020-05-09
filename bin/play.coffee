@@ -5,7 +5,7 @@ fs = require 'fs'
 CoffeeScript = require 'coffeescript'
 readline = require 'readline'
 
-Object.assign global, require './sequence'
+Object.assign global, require '../lib/sequence'
 
 readline.emitKeypressEvents process.stdin
 process.stdin.setRawMode true

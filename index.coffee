@@ -1,9 +1,8 @@
-midi = require './lib/midi'
-
 DMX = require 'dmx'
-dmx = new DMX()
+midi = require './lib/midi'
 {Fixture, Tomshine} = require './lib/fixture'
 
+dmx = new DMX()
 universe = dmx.addUniverse 'U0', 'enttec-usb-dmx-pro', '/dev/tty.usbserial-ENVVVCOF', easing: 'inQuad'
 
 f = new Tomshine 1
