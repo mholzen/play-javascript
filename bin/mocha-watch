@@ -1,0 +1,18 @@
+#!/bin/bash
+
+pattern=${1:-.}
+
+function test {
+  echo "started"
+  mocha --config test/mocha.yml -g $pattern
+#  istanbul report
+}
+
+test
+
+fswatch . -e .git -e coverage -o |
+while IFS='$\n' read -r line; do
+
+    test
+
+done
