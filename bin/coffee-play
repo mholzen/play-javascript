@@ -1,0 +1,1 @@
+coffee -r ~/develop/mholzen/play/bin/init.coffee

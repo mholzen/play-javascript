@@ -1,6 +1,7 @@
 EventEmitter = require 'events'
 midi = require 'midi'
-log = console.log
+log = require '@vonholzen/log'
+{Counter} = require './counter'
 
 # Set up a new input
 # input = new midi.Input()
@@ -71,23 +72,30 @@ class Click extends EventEmitter
     @input.ignoreTypes false, false, false
 
     @beat = 0
-    @bpm = undefined
-    @input.on 'message', (deltaTime, message) ->
+    @bpm = 0
+    @input.on 'message', (deltaTime, message) =>
       if message[0] == 250
         @beat = 0
+        @emit 'sync'
         return
-        
+
       if message[0] == 248
         @emit 'tick'
         @beat = (@beat + 1) % 24 
         if @beat == 0
+          # Note: using Date() or process.hrtime.bigint() both 
+          # produce results less precise that deltaTime
           @bpm = 60/(deltaTime*24)
           @emit 'beat'
-          log "beat", bpm.toFixed(3)
         return
-      
-      log "m: #{message} d: #{deltaTime}"
-
+    
+  counter: (max)->
+    counter = new Counter max
+    @on 'tick', ->
+      counter.inc()
+    @on 'sync', ->
+      counter.value = 0
+    counter
 
 click = ->
   new Click()

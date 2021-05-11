@@ -1,5 +1,4 @@
 #!/usr/bin/env coffee
-sequencer = require 'step-sequencer'
 readline = require 'readline'
 
 bpm = process.argv[2]

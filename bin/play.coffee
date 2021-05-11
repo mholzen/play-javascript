@@ -5,46 +5,45 @@ fs = require 'fs'
 CoffeeScript = require 'coffeescript'
 readline = require 'readline'
 
-Object.assign global, require '../lib/sequence'
+# Object.assign global, require '../lib/index'
+Object.assign global, require '../lib'
+Object.assign global, require '../scene'
 
 readline.emitKeypressEvents process.stdin
 process.stdin.setRawMode true
 process.stdin.on 'keypress', (str, key) ->
   if key.name == 'c' and key.ctrl
+    console.log "exiting"
     process.exit()
 
-
-output = new midi.Output()
-output.openVirtualPort "Node Output"
-
-step = new StepSequencer 120, 1, [0]
-step.beat = 0
-
-mtime = 0
 filename = './live.coffee'
-sequencers = []
+load = ->
+  log 'loading'
+  code = fs.readFileSync filename
+  try
+    compiled = CoffeeScript.compile code.toString()   # TODO: is there a stage for JS compilation?
 
-loadOnChanged = ->
-  stat = fs.statSync filename
-  if stat.mtime > mtime
-    console.log 'reloading'
-    code = fs.readFileSync filename
-    mtime = stat.mtime
-    sequencers.map (seq)->
-      seq.stop()
-    try
-      sequencers = eval CoffeeScript.compile code.toString()
-      sequencers.map (seq)->
-        seq.play()
-    catch error
-      console.log error
+    # CLEAN UP    
+    click.removeAllListeners()  # TODO: could be done in ./live
 
-loadOnChanged()
+    log 'stdin listeners', process.stdin.listenerCount()
+    # TODO?
+    # process.stdin.removeAllListeners()
 
-step.on '0', ->
-  step.beat = (step.beat + 1) % 8
-  console.log "beat #{step.beat+1}"
-  loadOnChanged()
-  # output.sendMessage noteOn 41
+    # re-install critical
+    process.stdin.on 'keypress', (str, key) ->
+      if key.name == 'c' and key.ctrl
+        process.exit()
 
-step.play()
+    eval compiled
+  catch error
+    console.log error
+    log.error error
+
+fs.watchFile filename, {interval: 100}, load
+fs.watchFile './lib/clock.coffee', {interval: 100}, load
+load()
+
+process.on 'uncaughtException', (error)->
+  console.log error
+  log.error error
