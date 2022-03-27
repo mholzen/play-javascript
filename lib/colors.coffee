@@ -15,7 +15,6 @@ module.exports = Object.assign colors,
   purple: {r: 255, g:0, b:255, a:0, w:0, uv:0}
   yellow_green: {r: 255, g:255, b:0, a:0, w:0, uv:0}
 
-  
   yellow: {r: 255, g:127, b:0, a:0, w:0, uv:0}
   
   uv: {r: 0, g:0, b:0, a:0, w:0, uv:255}

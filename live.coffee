@@ -293,7 +293,7 @@ process.stdin.on 'keypress', (str, key) ->
 
 
 click.on 'beat', (event)->
-  log 'beat', {
+  console.log 'beat', {
     bpm: click.bpm.toFixed(3)
     bar: event.bar
     beat: event.beat

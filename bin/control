@@ -18,10 +18,15 @@ function start {
 
 function stop {
     cd $root
-    echo "Stopping $EXE"
+    echo "Stopping '$EXE'"
     local pid=$(cat run/$EXE.pid)
     kill -9 $pid
     echo "Killed $pid"
+}
+
+function restart {
+    stop
+    start
 }
 
 function status {
@@ -34,11 +39,23 @@ function status {
 }
 
 function log {
+    trap 'kill $(jobs -p)' EXIT
+
     cd $root
     echo "Logging $EXE.stdout $EXE.stderr"
-    tail -f run/$EXE.stdout | sed 's/^/stdout: /' & 
-    tail -f run/$EXE.stderr | sed 's/^/stderr: /' 
+    tail -f run/$EXE.stdout | sed 's/^/stdout: /' &
+    pid_stdout=$!
+    tail -f run/$EXE.stderr | sed 's/^/stderr: /' &
+    pid_stderr=$!
+    wait
+    kill -9 $pid_stdout $pid_stderr
 }
 
 setup
+
+if [ -z $1 ]; then
+    echo "$0 [ start | stop | restart | status | log ]"
+    exit 1
+fi
+
 $1

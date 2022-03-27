@@ -19,10 +19,15 @@ if typeof process.stdin.setRawMode == 'function'
       console.log "exiting"
       process.exit()
 
-filename = './live.coffee'
-load = ->
-  log 'loading'
-  code = fs.readFileSync filename
+log = console.log
+rootFilename = './live.coffee'
+load = (event, filename)->
+  if event?
+    # log {event, filename}
+    log "'#{filename}' was #{event}d"
+    log 'reloading'
+
+  code = fs.readFileSync rootFilename
   try
     compiled = CoffeeScript.compile code.toString()   # TODO: is there a stage for JS compilation?
 
@@ -42,9 +47,9 @@ load = ->
     console.log error
     log.error error
 
-fs.watchFile filename, {interval: 100}, load
-fs.watchFile './lib/colors.coffee', {interval: 100}, load
-fs.watchFile './lib/clock.coffee', {interval: 100}, load
+fs.watch rootFilename, load
+fs.watch './lib/colors.coffee', load
+fs.watch './lib/clock.coffee', load
 load()
 
 process.on 'uncaughtException', (error)->
