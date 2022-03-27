@@ -8,13 +8,18 @@ class Chain
 
   push: (color)->
     @queue.unshift color
-    log 'push', {queue: @queue}
-    if @queue.length >= @fixtures.length
+    if @queue.length > @fixtures.length
       @queue.pop()
 
+    log.debug 'chain', {length: @queue.length}
+
     @fixtures.forEach (fixture, index)=>
-      log 'set', {fixture, color: @queue[index]}
-      fixture.set @queue[index]
+      # log.debug 'set', {fixture, color: @queue[index]}
+      action = @queue[index]
+      if typeof action == 'function'
+        action.call null, fixture
+      else
+        fixture.set @queue[index]
 
 module.exports = (fixtures)->
   new Chain fixtures

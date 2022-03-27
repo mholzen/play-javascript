@@ -72,23 +72,46 @@ class Click extends EventEmitter
     @input.ignoreTypes false, false, false
 
     @beat = 0
+    @beats = 4
+    @bar = 0
+    @bars = 4
     @bpm = 0
+    @position = 0
+    @ticks = 24
+
     @input.on 'message', (deltaTime, message) =>
       if message[0] == 250
-        @beat = 0
+        @reset()
         @emit 'sync'
         return
 
       if message[0] == 248
+        @position += 1
         @emit 'tick'
-        @beat = (@beat + 1) % 24 
-        if @beat == 0
-          # Note: using Date() or process.hrtime.bigint() both 
-          # produce results less precise that deltaTime
+        @emit 'tick:' + (@position % @ticks)
+
+        if (@position % (@ticks*@beats) ) == 0
+          @bar = Math.floor ( @position / (@ticks*@beats) ) % @beats
+          @beat = Math.floor ( @position / @ticks ) % @bars
+          @emit 'bar', @
+          @emit 'bar:'+@bar, @
+
+        if (@position % @ticks) == 0
           @bpm = 60/(deltaTime*24)
-          @emit 'beat'
+          @intervalMillis = ( 60.0 / @bpm ) / @ticks * 1000.0
+
+          @beat = Math.floor ( @position / @ticks ) % @bars
+          @emit 'beat', @
+          @emit 'beat:'+@beat, @
+
+
         return
-    
+
+  reset: ->
+    @beat = 0
+    @bar = 0
+    @position = 0
+
   counter: (max)->
     counter = new Counter max
     @on 'tick', ->

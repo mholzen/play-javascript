@@ -12,7 +12,7 @@ class Universe
     if not @name?
       @name = '0'
 
-    @universe = @dmx.addUniverse @name, @driver, @device
+    @universe = @dmx.addUniverse @name, @driver, @device, dmx_speed: 25
 
     @fixtures = []
     @logStatus()
@@ -33,7 +33,6 @@ class Universe
   update: (channels)->
     if not channels?
       channels = @fixtures.reduce ((m, f)-> Object.assign m, f.dmx()), {}
-    # log.debug 'updating', {channels}
     @dmx.update @name, channels
 
 class EntecUniverse extends Universe
@@ -88,6 +87,10 @@ class FixtureSet
 
   set: (args...)->
     @fixtures.map (f)->f.set args...
+
+  update: ->
+    for f in @fixtures
+      f.update()
 
 class Tomshine extends Fixture
   constructor: (address)->

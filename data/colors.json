@@ -44,11 +44,6 @@
     "hex": "#e52b50",
     "rgb": [229, 43, 80]
   },
-  "amber": {
-    "name": "Amber",
-    "hex": "#ffbf00",
-    "rgb": [255, 191, 0]
-  },
   "amber_sae_ece": {
     "name": "Amber (Sae/Ece)",
     "hex": "#ff7e00",

@@ -10,11 +10,14 @@ Object.assign global, require '../lib'
 Object.assign global, require '../scene'
 
 readline.emitKeypressEvents process.stdin
-process.stdin.setRawMode true
-process.stdin.on 'keypress', (str, key) ->
-  if key.name == 'c' and key.ctrl
-    console.log "exiting"
-    process.exit()
+
+# TODO: only setRawMode if stdin is a terminal
+if typeof process.stdin.setRawMode == 'function'
+  process.stdin.setRawMode true
+  process.stdin.on 'keypress', (str, key) ->
+    if key.name == 'c' and key.ctrl
+      console.log "exiting"
+      process.exit()
 
 filename = './live.coffee'
 load = ->
@@ -27,8 +30,7 @@ load = ->
     click.removeAllListeners()  # TODO: could be done in ./live
 
     log 'stdin listeners', process.stdin.listenerCount()
-    # TODO?
-    # process.stdin.removeAllListeners()
+    process.stdin.removeAllListeners 'keypress'   # removing all listeners disables stdin
 
     # re-install critical
     process.stdin.on 'keypress', (str, key) ->
@@ -41,6 +43,7 @@ load = ->
     log.error error
 
 fs.watchFile filename, {interval: 100}, load
+fs.watchFile './lib/colors.coffee', {interval: 100}, load
 fs.watchFile './lib/clock.coffee', {interval: 100}, load
 load()
 

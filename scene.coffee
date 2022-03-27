@@ -27,23 +27,25 @@ t4 = new Tomshine 49
 
 f1 = new FreedomPar 65
 f2 = new FreedomPar 81
+f3 = new FreedomPar 97
+f4 = new FreedomPar 113
 
-u.add [t1, t2, t3, t4, f1, f2]
+u.add [t1, t2, t3, t4, f1, f2, f3, f4]
+
 t = new FixtureSet [t1, t2, t3, t4]
-f = new FixtureSet [f1, f2]
+f = new FixtureSet [f1, f2, f3, f4]
 s = new FixtureSet [t, f]
 
 try
   log.debug 'trying to listen to midi click'
   click = midi.click()
 
-  # override midi clock
-  console.log "midi clock detected - click has different interface than a clock"
-  click = new Clock()
+  console.log "midi clock detected: using it."
 
 catch error
   log.error {message: error.message}
   if error.message == 'no input midi ports'
+    console.log "no midi clock detected (no input ports):  using internal clock"
     click = new Clock()
 
 
@@ -52,7 +54,7 @@ module.exports = {
   t
   f
   t1, t2, t3, t4
-  f1, f2
+  f1, f2, f3, f4
   click
   log
   anime
