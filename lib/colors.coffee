@@ -21,7 +21,7 @@ module.exports = Object.assign colors,
   amber: {r: 0, g:0, b:0, a:255, w: 0, uv: 0}
   amber2: {r: 255, g:191, b:0 }
   yellow: {r: 255, g:127, b:0, a:0, w:0, uv:0}
-  gold: {r: 255, g:109, b:0, a:255, w:0, uv:127}
+  gold: {r: 255, g:109, b:0, a:64, w:0, uv:0}
 
   violet: {r:20, b: 10, g: 0, w: 0, a:0, uv: 255}
   pink: {r: 255, g:0, b:0, a:0, w:64, uv:0}

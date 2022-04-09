@@ -3,41 +3,47 @@ require '../lib/colors'
 # ideas: beat:1,3 pan: 255 beat: 2,4 pan:0
 
 click.bpm =
-  30
+  120
   # 89 # Channel Tres - Black Moses , RTJ - out of sight
   # 119 # Channel Tres - Glide
   # 144
 
 click.reset()
 
-u.set {dimmer:255, tilt: 127, pan: 0, speed: 0}
+universe = JSON.parse fs.readFileSync './universe.json'
+u.set universe
+# u.set { speed: 255 }
+# u.set { tilt: 0 }
 
 osum = (a,b)->
   r = Object.keys(a)
   .map (k)-> {[k]: (a[k] ? 0) + (b[k] ? 0) }
   Object.assign {}, r...
-
 objectsSum = (objects)->
   r = objects.reduce osum, black
   for k of r
     r[k] = r[k] / objects.length
   r
-
-argSum = ->
+sum = ->
   objectsSum Array.from arguments
 
-dark_orange = argSum orange, black
-dark_green = argSum green, black
-deep_orange = argSum yellow, red, red
-# u.set {r: 64, g:20, b:255, a:0, w:0, uv:0}
-u.set soft_white
-# u.set orange
-# u.set objectsSum [ red, orange ]
+dark_orange = sum orange, black
+dark_green = sum green, black
+deep_orange = sum yellow, red, red
+
+dark_green2 = sum green, green, red, black
+dark_cyan = sum cyan, black
+dark_purple = sum purple, black
+u.set red
 
 sequence = [
   # soft_white
-  soft_white, gold_white, pink_white
+  # soft_white, gold_white, gold #, pink_white
   # yellow, orange, gold, soft_white, dark_orange, soft_white, deep_orange
+  # gold, deep_orange, pink, dark_purple, dark_cyan, dark_green2
+  # blue, red, gold, red, yellow, purple
+  blue, purple, red, yellow, green, cyan
+
 ]
 
 sequence1 = [
@@ -46,11 +52,6 @@ sequence1 = [
   [pink, magenta], {r: 64, g:20, b:255, a:0, w:0, uv:0},
   [cyan, green_brown], yellow_green,
   [purple, jade], yellow
-
-  # red
-
-  # black
-  # soft_white
 
   # soft_white, gold_white, dark_orange, gold, yellow
   # green, blue, red
@@ -81,10 +82,16 @@ sequence1 = [
 ]
 
 sequence = circuit sequence
-targets = [f1, f2, f3, f4, t1, t2, t3, t4]
+# targets = [t1, t2, t3, t4, f1, f2, f3, f4]
+targets = [t1, t2, t3]
 c1 = chain [t1, t2, t3, t4]
 
-if 1 then click.on 'bar:0', (event)->
+delay = (ms, f)->
+  setTimeout f, ms
+
+transition = 
+
+if 1 then click.on 'bar:0,2', (event)->
   scene = sequence.next().value
 
   if not Array.isArray scene
@@ -95,16 +102,21 @@ if 1 then click.on 'bar:0', (event)->
 
   if 1 # transition scenes
     targets.map (target,i)->
-      anime Object.assign {
-        targets: target
-        duration: click.intervalMillis * 32 * 16
-        # easing: 'linear'
-        # easing: 'easeInCubic'
-        easing: 'easeOutCubic'
-        update: ->
-          target.update()
-          # u.update()
-      }, scene[i]
+      # introduce delay based on i
+      
+      d = click.intervalMillis * 24 * 2 * i
+      delay d, ->
+        console.log "transition", {target: i}
+        anime Object.assign {
+          targets: target
+          duration: click.intervalMillis * 24 * 1
+          # easing: 'linear'
+          # easing: 'easeInCubic'
+          easing: 'easeOutCubic'
+          update: ->
+            target.update()
+            # u.update()
+        }, scene[i]
 
   if 0 # set - TODO: should this be moved out
     targets.forEach (target, i)->
@@ -177,14 +189,14 @@ if 0 # fast move
 
   click.on 'beat', f
 
-if 0 # flash then fade out
+if 1 # flash then fade out
   fadeOut = (event)->
     u.set {dimmer: 255}
     log 'fade out'
     anime Object.assign {
       targets: [t1, t2, t3, f1, f2, f3, f4]
-      duration: click.intervalMillis * 16 * 8
-      # easing: 'linear'
+      duration: click.intervalMillis * 16 * 2
+      easing: 'linear'
       easing: 'easeOutSine'
       # easing: 'easeOutCirc'
       # easing: 'easeInOutSine'
@@ -196,7 +208,7 @@ if 0 # flash then fade out
         f2.update()
         f3.update()
         f4.update()
-    }, { dimmer: 1 }
+    }, { dimmer: 64 }
 
   click.on 'bar', fadeOut
 
@@ -241,20 +253,89 @@ process.stdin.on 'keypress', (str, key) ->
       click.reset()
     return
 
+  updateTiltPan = ->
+    t1.update()
+    t2.set {pan: t1.pan, tilt: t1.tilt}
+    t3.set {pan: t1.pan, tilt: t1.tilt}
+    console.log {pan: t1.pan, tilt: t1.tilt, speed: t1.speed}
+
+  inc = 1
+  inc = 32 if key.shift
+  # inc = 32 if key.ctrl
+  console.log key
+  bound = (min, max, value)->
+    if value < min
+      return min
+    if value > max
+      return max
+    return value
+
   if key.name == 'a'
-    t1.tilt = ( t1.tilt + 1 ) % 250
+    t1.tilt = bound 0, 255, t1.tilt + inc
+    updateTiltPan()
 
   if key.name == 'z'
-    t1.tilt = ( t1.tilt - 1 ) % 250
+    t1.tilt = bound 0, 255, t1.tilt - inc
+    updateTiltPan()
 
   if key.name == 'q'
-    t1.pan = ( t1.pan + 1 ) % 250
+    t1.pan = bound 0, 255, t1.pan + inc
+    updateTiltPan()
 
   if key.name == 'w'
-    t1.pan = ( t1.pan - 1 ) % 250
+    t1.pan = bound 0, 255, t1.pan - inc
+    updateTiltPan()
 
-  t1.update()
-  log.debug {pan: t1.pan, tilt: t1.tilt}
+  frequencies =
+    'y': []
+    'u': 'bar'
+    'i': ['beat:0', 'beat:2']
+    'o': 'beat'
+    'p': ['tick:0', 'tick:12']
+    '[': ['tick:0', 'tick:6', 'tick:12', 'tick:18']
+    ']': 'tick'
+
+  frequency = frequencies[key.sequence]
+  if frequency?
+    console.log "setting frequency to #{frequency}"
+    for f in Object.values frequencies
+      f = [f] if not Array.isArray f
+      for p in f
+        click.off p, fadeOut
+    frequency = [frequency] if not Array.isArray frequency
+    console.log {frequency}
+    for f in frequency
+      console.log "on #{f}"
+      click.on f, fadeOut
+
+  # isFadeOn = (eventName)-> click.listeners(eventName).includes(fadeOut)
+  # if key.name == 'u'
+  #   if isFadeOn 'bar'
+  #     console.log 'off'
+  #     click.off 'bar', fadeOut
+  #   else
+  #     console.log 'on'
+  #     click.on 'bar', fadeOut
+
+  # if key.name == 'i'
+  #   if isFadeOn 'beat:0'
+  #     click.off 'beat:0', fadeOut
+  #     click.off 'beat:2', fadeOut
+  #   else
+  #     click.on 'beat:0', fadeOut
+  #     click.on 'beat:2', fadeOut
+
+  # if key.name == 'o'
+  #   if isFadeOn 'beat'
+  #     click.off 'beat', fadeOut
+  #   else
+  #     click.on 'beat', fadeOut
+
+  # if key.name == 'p'
+  #   if isFadeOn 'tick'
+  #     click.off 'tick', fadeOut
+  #   else
+  #     click.on 'tick', fadeOut
 
 
 # click.on 'beat:0', (event)->
@@ -300,25 +381,3 @@ click.on 'beat', (event)->
     pos: event.position
     intervalMs: event.intervalMillis?.toPrecision(2)
   }
-#   u.update()
-
-  # log {
-  #   t1: t1.r.toFixed().padStart(3, ' ')
-  #   t2: t2.r.toFixed().padStart(3, ' ')
-  #   t3: t3.r.toFixed().padStart(3, ' ')
-  #   t4: t4.r.toFixed().padStart(3, ' ')
-  # }
-  # log 't1', t1.toString()
-  # log 't2', t2.toString()
-
-# click.on 'bar', (event)->
-#   log 'bar ', {bpm: click.bpm.toFixed(3), bar: event.bar}
-
-
-# log.time = (f)->
-#   start = process.hrtime()  # use bigint()
-#   res = f()
-#   end = process.hrtime()
-#   duration = ((end[0]-start[0])*10000000000 + (end[1]-start[1])) / 1000
-#   log.debug 'end', {duration: duration + 'µs'}
-#   return res

@@ -1,12 +1,17 @@
-#!/bin/sh
+#!/bin/zsh
 
 function setup {
     EXE=play
     root="$( cd "$( dirname "$0" )"/.. && pwd )"
+    root=~/develop/mholzen/play
+    cd $root
+    # trap 'kill $(jobs -p)' EXIT
+    trap 'echo done' EXIT
+    # trap '$(jobs -p)' EXIT
+
 }
 
 function start {
-    cd $root
     echo "Starting '$EXE'"
 
     bin/$EXE >> run/$EXE.stdout 2> run/$EXE.stderr &
@@ -17,7 +22,6 @@ function start {
 }
 
 function stop {
-    cd $root
     echo "Stopping '$EXE'"
     local pid=$(cat run/$EXE.pid)
     kill -9 $pid
@@ -30,7 +34,6 @@ function restart {
 }
 
 function status {
-    cd $root
     local pid=$(cat run/$EXE.pid)
 
     echo "Status of $pid"
@@ -41,21 +44,38 @@ function status {
 function log {
     trap 'kill $(jobs -p)' EXIT
 
-    cd $root
     echo "Logging $EXE.stdout $EXE.stderr"
     tail -f run/$EXE.stdout | sed 's/^/stdout: /' &
     pid_stdout=$!
     tail -f run/$EXE.stderr | sed 's/^/stderr: /' &
     pid_stderr=$!
+    echo 'before wait'
     wait
+    echo 'after wait'
     kill -9 $pid_stdout $pid_stderr
+}
+
+function set-universe {
+    local var=$2
+    local val=$3
+    (cat universe.json | jq ".$var = $val" > /tmp/universe.json) && mv /tmp/universe.json universe.json
+}
+
+function edit {
+    ~/.bash/bin/edit
 }
 
 setup
 
-if [ -z $1 ]; then
-    echo "$0 [ start | stop | restart | status | log ]"
+cmd="$1"
+
+if [ -z "$cmd" ]; then
+    echo "$0 [ start | stop | restart | status | log | set | get | edit ]"
     exit 1
 fi
 
-$1
+if [ "$cmd" = 'set' ]; then
+    cmd=set-universe
+fi
+
+$cmd "$@"

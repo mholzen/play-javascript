@@ -19,6 +19,8 @@ class Clock extends EventEmitter
 
     @start = process.hrtime.bigint()
     @intervalMillis = ( 60.0 / @bpm ) / @ticks * 1000.0
+    @beatMs = @intervalMillis * 24
+    @barMs = @beatMs * 4
     # @interval = setInterval (=> @tick()), @intervalMillis
     @scheduleNext()
 

@@ -21,11 +21,16 @@ if typeof process.stdin.setRawMode == 'function'
 
 log = console.log
 rootFilename = './live.coffee'
+
 load = (event, filename)->
   if event?
     # log {event, filename}
     log "'#{filename}' was #{event}d"
     log 'reloading'
+
+    if event == 'rename'
+      # reset the original watch
+      fs.watch filename, load
 
   code = fs.readFileSync rootFilename
   try
@@ -45,11 +50,12 @@ load = (event, filename)->
     eval compiled
   catch error
     console.log error
-    log.error error
+    # log.error error
 
 fs.watch rootFilename, load
 fs.watch './lib/colors.coffee', load
 fs.watch './lib/clock.coffee', load
+fs.watch './universe.json', load
 load()
 
 process.on 'uncaughtException', (error)->

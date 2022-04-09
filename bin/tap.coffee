@@ -50,8 +50,8 @@ process.stdin.on 'keypress', (str, key) ->
   med = median i[1..]
 
   s = []
-  s.push "average: #{millisToBpm(ave).toFixed(2)} [bpm]"
   s.push "median: #{millisToBpm(med).toFixed(2)} [bpm] #{med.toFixed(2)} [ms]"
+  s.push "average: #{millisToBpm(ave).toFixed(2)} [bpm]"
   s.push "intervals: (#{times.length} [count])"
   s.push "[ " + (i[1..].map (i)-> i.toString().padStart 4, ' ').join(' ') + " ]"
 
