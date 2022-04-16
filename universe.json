@@ -2,5 +2,6 @@
   "dimmer": 255,
   "speed": 0,
   "pan": 0,
-  "tilt": 127
+  "tilt": 127,
+  "bpm": 156
 }

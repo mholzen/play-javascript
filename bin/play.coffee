@@ -60,4 +60,4 @@ load()
 
 process.on 'uncaughtException', (error)->
   console.log error
-  log.error error
+  # log.error error

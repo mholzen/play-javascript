@@ -1,17 +1,13 @@
 require '../lib/colors'
-
-# ideas: beat:1,3 pan: 255 beat: 2,4 pan:0
+universe = JSON.parse fs.readFileSync './universe.json'
+u.set universe
 
 click.bpm =
-  120
-  # 89 # Channel Tres - Black Moses , RTJ - out of sight
-  # 119 # Channel Tres - Glide
-  # 144
+  # 88
+  universe.bpm
 
 click.reset()
 
-universe = JSON.parse fs.readFileSync './universe.json'
-u.set universe
 # u.set { speed: 255 }
 # u.set { tilt: 0 }
 
@@ -39,10 +35,10 @@ u.set red
 sequence = [
   # soft_white
   # soft_white, gold_white, gold #, pink_white
-  # yellow, orange, gold, soft_white, dark_orange, soft_white, deep_orange
+  yellow, orange, gold, soft_white, dark_orange, soft_white, deep_orange
   # gold, deep_orange, pink, dark_purple, dark_cyan, dark_green2
   # blue, red, gold, red, yellow, purple
-  blue, purple, red, yellow, green, cyan
+  # blue, purple, red, yellow, green, cyan
 
 ]
 
@@ -82,16 +78,14 @@ sequence1 = [
 ]
 
 sequence = circuit sequence
-# targets = [t1, t2, t3, t4, f1, f2, f3, f4]
-targets = [t1, t2, t3]
+targets = [t1, t2, t3, t4, f1, f2, f3, f4]
+# targets = [t1, t2, t3]
 c1 = chain [t1, t2, t3, t4]
 
 delay = (ms, f)->
   setTimeout f, ms
 
-transition = 
-
-if 1 then click.on 'bar:0,2', (event)->
+transitionScene = (event)->
   scene = sequence.next().value
 
   if not Array.isArray scene
@@ -104,36 +98,22 @@ if 1 then click.on 'bar:0,2', (event)->
     targets.map (target,i)->
       # introduce delay based on i
       
-      d = click.intervalMillis * 24 * 2 * i
+      d = click.intervalMillis * 24 * .25 * i * 1
+      d = 0
       delay d, ->
-        console.log "transition", {target: i}
+        # console.log "transition", {target: i}
         anime Object.assign {
           targets: target
-          duration: click.intervalMillis * 24 * 1
+          duration: click.intervalMillis * 24 * 8
           # easing: 'linear'
           # easing: 'easeInCubic'
           easing: 'easeOutCubic'
-          update: ->
-            target.update()
-            # u.update()
+          update: -> target.update()
         }, scene[i]
 
-  if 0 # set - TODO: should this be moved out
-    targets.forEach (target, i)->
-      target.set scene[i]
-
-  if 0
-    f = (target)->
-      anime Object.assign {
-        targets: target
-        duration: click.intervalMillis * 32
-        # easing: 'linear'
-        easing: 'easeInCubic'
-        update: -> target.update()
-      }, scene[0]
-
-    c1.push f
-    u.update()
+if 1 # transition scenes
+  click.on 'bar:0', transitionScene
+  click.on 'bar:2', transitionScene
 
 if 0 # super fast move
   u.set {speed: 0}
@@ -143,6 +123,28 @@ if 0 # super fast move
     u.set
       tilt: Math.random()*128 + 64
       pan: Math.random()*64
+
+if 0 # medium continuous move
+  pan = 0
+  tilt = 0
+  av = 4    # angular(?) velocity
+  f = (move)->
+    ->
+      if move
+        pan += Math.sign Math.random() - .5
+        tilt += Math.sign Math.random() - .5
+        if pan < 0
+          pan = -pan
+        if tilt < 0
+          tilt = -tilt
+
+      u.set {speed: 255}
+      console.log {pan, tilt}
+      t.set
+        pan:  pan * av
+        tilt: 127 + tilt * av * 3
+
+  click.on 'beat', f 1
 
 if 0 # slow move
   p = 0
@@ -160,13 +162,44 @@ if 0 # slow move
         if tilt < 0
           tilt = -tilt
 
-      u.set {speed: 255}
       t.set
+        speed: 255
         pan:  p * av
         tilt: 64 + tilt * av * 3
 
   click.on 'beat:0', f 1
   click.on 'beat:2', f 0
+
+if 1 # small fast moves
+  pan = 0
+  tilt = 0
+  av = 50
+
+  destination = {pan: 0, tilt: 64}
+  moveDestination = ->
+    destination.pan += (Math.sign Math.random() - .5) * av
+    destination.tilt += (Math.sign Math.random() - .5) * av
+    if destination.pan < 0
+      destination.pan = -destination.pan
+    if destination.tilt < 0
+      destination.tilt = -destination.tilt
+    console.log {destination}
+
+  increment = 1
+  moveToDestination = (move)->
+    ->
+      if move
+        if pan != destination.pan
+          pan += Math.sign(destination.pan - pan) * increment
+      console.log {pan}
+      t.set
+        speed: 255
+        pan:  pan
+        tilt: 64
+
+  click.on 'bar:0',  moveDestination
+  click.on 'beat', moveToDestination true
+
 
 if 0 # fast move
   p = 0
@@ -189,7 +222,7 @@ if 0 # fast move
 
   click.on 'beat', f
 
-if 1 # flash then fade out
+if 0 # flash then fade out
   fadeOut = (event)->
     u.set {dimmer: 255}
     log 'fade out'

@@ -1,5 +1,10 @@
 #!/usr/bin/env coffee
 readline = require 'readline'
+fs = require 'fs'
+
+universe = JSON.parse fs.readFileSync './universe.json'
+saveUniverse = ->
+  fs.writeFileSync './universe.json', JSON.stringify universe, null, 2
 
 readline.emitKeypressEvents process.stdin
 process.stdin.setRawMode true
@@ -24,10 +29,21 @@ median = (values) ->
     return values[half]
   (values[half - 1] + values[half]) / 2.0
 
+iqm = (values) ->
+  if values.length == 0
+    return 0
+  values.sort (a, b) -> a - b
+  lower = Math.floor values.length * .25
+  higher = Math.floor values.length * .75
+  i = average values.slice lower, higher
+  console.log {lower, higher}
+  i
+  
 instructions = """
 any key to tap
 <r> to reset"
 ctrl+c to quit
+<enter> to send
 """
 
 console.log instructions
@@ -36,6 +52,7 @@ millisToBpm = (ms)->
   f = 1000.0 / ms	# hz
   t = f * 60		  # bpm
 
+bpm = null
 process.stdin.on 'keypress', (str, key) ->
   if key.name == 'c' and key.ctrl
     process.exit()
@@ -43,17 +60,28 @@ process.stdin.on 'keypress', (str, key) ->
   if key.name == 'r'
     times = []
 
+  if key.name == 'return'
+    console.log "sending"
+    if bpm?
+      universe.bpm = bpm
+      saveUniverse()
+
+  # TAP
   times.push (new Date()).getTime()
 
   i = intervals times
   ave = average i[1..]
   med = median i[1..]
+  i.iqm = iqm i
+  bpm = Math.round millisToBpm i.iqm
 
   s = []
-  s.push "median: #{millisToBpm(med).toFixed(2)} [bpm] #{med.toFixed(2)} [ms]"
+  s.push "median: #{millisToBpm(med).toFixed(2)} [bpm] (#{med.toFixed(2)} [ms])"
   s.push "average: #{millisToBpm(ave).toFixed(2)} [bpm]"
-  s.push "intervals: (#{times.length} [count])"
-  s.push "[ " + (i[1..].map (i)-> i.toString().padStart 4, ' ').join(' ') + " ]"
+  s.push "iqm: #{millisToBpm(i.iqm).toFixed(2)} [bpm]"
+  s.push "(#{bpm} [bpm])"
+  # s.push "intervals: (#{times.length} [count])"
+  # s.push "[ " + (i[1..].map (i)-> i.toString().padStart 4, ' ').join(' ') + " ]"
 
   console.log s.join ' '
 
