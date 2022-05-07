@@ -19,22 +19,19 @@ class Clock extends EventEmitter
 
     @start = process.hrtime.bigint()
     @intervalMillis = ( 60.0 / @bpm ) / @ticks * 1000.0
+    @intervalMicros = Math.round @intervalMillis * 1000.0
+
     @beatMs = @intervalMillis * 24
     @barMs = @beatMs * 4
-    # @interval = setInterval (=> @tick()), @intervalMillis
     @scheduleNext()
 
   scheduleNext: ->
     now = process.hrtime.bigint()
     next = @start + (BigInt(@counter.value) + 1n) * BigInt( (@intervalMillis * 1000 * 1000).toFixed(0) )
-    # console.log 'inc', @counter.value, (BigInt(@counter.value) + 1n)
-    # counter starts at -1
     nextInterval = next - now
     if nextInterval < 0
-      # console.log @start, now, now - @start, BigInt( (@intervalMillis * 1000 * 1000).toFixed(0) )
       nextInterval = 0n
     nextIntervalMs = Number nextInterval / 1000n / 1000n 
-    # console.log now, next, nextInterval, nextIntervalMs
     setTimeout (=>@tick()), nextIntervalMs
 
   reset:->
@@ -45,12 +42,15 @@ class Clock extends EventEmitter
     @pos = 0
     @start = process.hrtime.bigint()
     @intervalMillis = ( 60.0 / @bpm ) / @ticks * 1000.0
-    # @interval = setInterval (=> @tick()), @intervalMillis
+    @intervalMicros = Math.round @intervalMillis * 1000.0
     @scheduleNext()
 
   tick: ->
     @counter.inc()
+    @pos = @counter.value
     @emit 'tick', @
+    @emit ('tick:'+ (@counter.value % 24)), @
+
     if (@counter.value % 2) == 0
       @emit 'tick/2', @
     if (@counter.value % 3) == 0
@@ -58,15 +58,16 @@ class Clock extends EventEmitter
     if (@counter.value % 4) == 0
       @emit 'tick/4', @
 
-
     if (@counter.value % @ticks) == 0
+      @bar = (Math.floor ( @counter.value / (@ticks*@beats) ) ) % 4
       @beat = Math.floor ( @counter.value / @ticks ) % @bars
       @emit 'beat', @
       @emit 'beat:'+@beat, @
+      if @beat != 0
+        @emit 'beat:-'+(4-@beat), @
 
     if (@counter.value % (@ticks*@beats) ) == 0
-      @pos = Math.floor ( @counter.value / (@ticks*@beats) )
-      @bar = Math.floor ( @counter.value / (@ticks*@beats) ) % 4
+      @bar = (Math.floor ( @counter.value / (@ticks*@beats) ) ) % 4
       @emit 'bar', @
       @emit 'bar:'+@bar, @
 

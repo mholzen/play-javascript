@@ -6,40 +6,21 @@ click.bpm =
   # 88
   universe.bpm
 
+t.set
+  pan: 75
+  tilt: 160
+
 click.reset()
 
-# u.set { speed: 255 }
-# u.set { tilt: 0 }
-
-osum = (a,b)->
-  r = Object.keys(a)
-  .map (k)-> {[k]: (a[k] ? 0) + (b[k] ? 0) }
-  Object.assign {}, r...
-objectsSum = (objects)->
-  r = objects.reduce osum, black
-  for k of r
-    r[k] = r[k] / objects.length
-  r
-sum = ->
-  objectsSum Array.from arguments
-
-dark_orange = sum orange, black
-dark_green = sum green, black
-deep_orange = sum yellow, red, red
-
-dark_green2 = sum green, green, red, black
-dark_cyan = sum cyan, black
-dark_purple = sum purple, black
-u.set red
+u.set gold
 
 sequence = [
   # soft_white
   # soft_white, gold_white, gold #, pink_white
-  yellow, orange, gold, soft_white, dark_orange, soft_white, deep_orange
-  # gold, deep_orange, pink, dark_purple, dark_cyan, dark_green2
+  # yellow, orange, gold, soft_white, dark_orange, soft_white, deep_orange
+  gold, deep_orange, pink, dark_purple, dark_cyan, dark_green2
   # blue, red, gold, red, yellow, purple
   # blue, purple, red, yellow, green, cyan
-
 ]
 
 sequence1 = [
@@ -79,41 +60,41 @@ sequence1 = [
 
 sequence = circuit sequence
 targets = [t1, t2, t3, t4, f1, f2, f3, f4]
-# targets = [t1, t2, t3]
-c1 = chain [t1, t2, t3, t4]
 
 delay = (ms, f)->
   setTimeout f, ms
 
-transitionScene = (event)->
-  scene = sequence.next().value
-
+fillTargets = (scene, targets)->
   if not Array.isArray scene
     scene = Array(targets.length).fill scene
 
   while scene.length < targets.length
     scene = scene.concat scene
 
-  if 1 # transition scenes
-    targets.map (target,i)->
-      # introduce delay based on i
-      
-      d = click.intervalMillis * 24 * .25 * i * 1
-      d = 0
-      delay d, ->
-        # console.log "transition", {target: i}
-        anime Object.assign {
-          targets: target
-          duration: click.intervalMillis * 24 * 8
-          # easing: 'linear'
-          # easing: 'easeInCubic'
-          easing: 'easeOutCubic'
-          update: -> target.update()
-        }, scene[i]
+  scene
 
-if 1 # transition scenes
-  click.on 'bar:0', transitionScene
-  click.on 'bar:2', transitionScene
+transitionScene = (event)->
+  scene = sequence.next().value
+  scene = fillTargets scene, targets
+  targets.map (target, i)->
+    # introduce delay based on i
+
+    d = click.intervalMillis * 24 * i
+    # d = 0
+    delay d, ->
+      console.log "transition", {i}
+      anime Object.assign {
+        targets: target
+        duration: click.intervalMillis * 24 * 8
+        # easing: 'linear'
+        # easing: 'easeInCubic'
+        easing: 'easeOutCubic'
+        update: -> target.update()
+      }, scene[i]
+
+if 0 # transition scenes
+  click.on 'bar', transitionScene
+  # click.on 'bar:2', transitionScene
 
 if 0 # super fast move
   u.set {speed: 0}
@@ -146,7 +127,7 @@ if 0 # medium continuous move
 
   click.on 'beat', f 1
 
-if 0 # slow move
+if 1 # slow move
   p = 0
   tilt = 0
   s = 1
@@ -155,10 +136,10 @@ if 0 # slow move
   f = (move)->
     ->
       if move
-        p += Math.sign Math.random() - .5
+        pan += Math.sign Math.random() - .5
         tilt += Math.sign Math.random() - .5
-        if p < 0
-          p = -p
+        if pan < 0
+          pan = -pan
         if tilt < 0
           tilt = -tilt
 
@@ -167,10 +148,10 @@ if 0 # slow move
         pan:  p * av
         tilt: 64 + tilt * av * 3
 
-  click.on 'beat:0', f 1
-  click.on 'beat:2', f 0
+  click.on 'bar:0', f 1
+  click.on 'beat:1', f 0
 
-if 1 # small fast moves
+if 0 # small fast moves
   pan = 0
   tilt = 0
   av = 50
@@ -191,17 +172,19 @@ if 1 # small fast moves
       if move
         if pan != destination.pan
           pan += Math.sign(destination.pan - pan) * increment
-      console.log {pan}
+        if tilt != destination.tilt
+          tilt += Math.sign(destination.tilt - tilt) * increment
+
+      console.log {pan, tilt}
       t.set
         speed: 255
-        pan:  pan
-        tilt: 64
+        pan: pan
+        tilt: tilt
 
   click.on 'bar:0',  moveDestination
   click.on 'beat', moveToDestination true
 
-
-if 0 # fast move
+if 0 # large fast moves
   p = 0
   tilt = 0
   s = 1
@@ -215,34 +198,56 @@ if 0 # fast move
     if tilt < 0
       tilt = -tilt
 
-    u.set {speed: 255}
+    u.set {speed: 0}
     t.set
       pan:  p * av
       tilt: 64 + tilt * av * 2
 
   click.on 'beat', f
 
-if 0 # flash then fade out
-  fadeOut = (event)->
-    u.set {dimmer: 255}
-    log 'fade out'
-    anime Object.assign {
-      targets: [t1, t2, t3, f1, f2, f3, f4]
-      duration: click.intervalMillis * 16 * 2
-      easing: 'linear'
-      easing: 'easeOutSine'
-      # easing: 'easeOutCirc'
-      # easing: 'easeInOutSine'
-      update: ->
-        t1.update()
-        t2.update()
-        t3.update()
-        f1.update()
-        f2.update()
-        f3.update()
-        f4.update()
-    }, { dimmer: 64 }
+rampBeats = 2
+fadeIn = (event, targets)->
+  u.set { dimmer: 16 }
+  anime Object.assign {
+    targets: targets ? [t1, t2, t3, f1, f2, f3, f4]
+    # targets: targets ? u
+    duration: click.intervalMillis * 24 * rampBeats
+    # easing: 'linear'
+    easing: 'easeOutSine'
+    # easing: 'easeOutCirc'
+    # easing: 'easeInOutSine'
+    update: ->
+      t1.update()
+      t2.update()
+      t3.update()
+      f1.update()
+      f2.update()
+      f3.update()
+      f4.update()
+  }, { dimmer: 127 }
+if 0 # fade in to flash
+  click.on ('beat:-'+rampBeats), fadeIn   # should be 'beat:' + (4 - rampBeats)
+  # delay (click.beatsMs * rampBeats), fadeIn
 
+fadeOut = (event)->
+  u.set {dimmer: 127}
+  anime Object.assign {
+    targets: [t1, t2, t3, f1, f2, f3, f4]
+    duration: click.intervalMillis * 24 * rampBeats
+    # easing: 'linear'
+    easing: 'easeOutSine'
+    # easing: 'easeOutCirc'
+    # easing: 'easeInOutSine'
+    update: ->
+      t1.update()
+      t2.update()
+      t3.update()
+      f1.update()
+      f2.update()
+      f3.update()
+      f4.update()
+  }, { dimmer: 16 }
+if 0 # flash then fade out
   click.on 'bar', fadeOut
 
   # click.on 'beat:0', fadeOut
@@ -261,31 +266,42 @@ if 0 # flash then fade out
   # click.on 'beat', f
 
 
-# sequence = circuit [ jade, purple ]
-# click.on 'beat', (event)->
-#   scene = sequence.next().value
-#   t1.set scene
-#   u.update()
-
-# c = circuit [red, gold, purple, violet]
-# c1 = chain [t1, t2, t3, t4]
-# click.on 'beat', (event)->
-#   c1.push c.next().value
-#   u.update()
-
 process.stdin.on 'keypress', (str, key) ->
+  #
+  # CLOCK
+  #
   if key.name == 'r'
-    log 'reset'
+    log 'reset immediately'
     click.reset()
     return
 
   if key.name == 's'
-    log 'sync'
+    log 'sync on next beat'
     click.once 'beat', ->
       click.emit 'sync'
+      log 'reset'
       click.reset()
     return
 
+  if key.sequence == '['
+    click.start += 10000000n # 10,000,000 nanoseconds = 10ms
+    log '+10ms'
+    return
+  if key.sequence == ']'
+    click.start -= 10000000n
+    log '-10ms'
+    return
+  if key.sequence == '='
+    click.bpm += .25
+    return
+  if key.sequence == '-'
+    click.bpm -= .25
+    return
+
+
+  #
+  # TILT AND PAN
+  #
   updateTiltPan = ->
     t1.update()
     t2.set {pan: t1.pan, tilt: t1.tilt}
@@ -295,7 +311,6 @@ process.stdin.on 'keypress', (str, key) ->
   inc = 1
   inc = 32 if key.shift
   # inc = 32 if key.ctrl
-  console.log key
   bound = (min, max, value)->
     if value < min
       return min
@@ -320,13 +335,13 @@ process.stdin.on 'keypress', (str, key) ->
     updateTiltPan()
 
   frequencies =
-    'y': []
-    'u': 'bar'
-    'i': ['beat:0', 'beat:2']
-    'o': 'beat'
-    'p': ['tick:0', 'tick:12']
-    '[': ['tick:0', 'tick:6', 'tick:12', 'tick:18']
-    ']': 'tick'
+    '0': []
+    't': 'bar'
+    'y': ['beat:0', 'beat:2']
+    'u': 'beat'
+    'i': ['tick:0', 'tick:12']
+    'o': ['tick:0', 'tick:6', 'tick:12', 'tick:18']
+    'p': 'tick'
 
   frequency = frequencies[key.sequence]
   if frequency?
@@ -370,47 +385,46 @@ process.stdin.on 'keypress', (str, key) ->
   #   else
   #     click.on 'tick', fadeOut
 
-
-# click.on 'beat:0', (event)->
-#   t1.set red
-#   a = Object.assign {
-#     targets: t1
-#     duration: 2000
-#     easing: 'easeIn'
-#     update: ->
-#       t1.update()
-#   }, blue
-#   anime a
-
-# click.on 'beat:2', (event)->
-#   t1.set blue
-#   anime 
-#     targets: t1
-#     red
-#     duration: 2000
-#     easing: 'easeIn'
-#     update: -> t1.update()
+  console.log key
 
 
-# click.on 'beat:0', (event)->
-#   t1.set {dimmer:255, r: 255, g:0, b:0, a:0, w:0, uv:0, tilt: 127}
+# animate color
+  # click.on 'beat:0', (event)->
+  #   t1.set red
+  #   a = Object.assign {
+  #     targets: t1
+  #     duration: 2000
+  #     easing: 'easeIn'
+  #     update: ->
+  #       t1.update()
+  #   }, blue
+  #   anime a
 
-# click.on 'beat:0', (event)->
-#   # log 'beat', {bpm: click.bpm.toFixed(3), event}
-#   t1.set {dimmer:255, r: 0, g:0, b:0, a:0, w:0, uv:0, tilt: 127}
-#   anime 
-#     targets: t1
-#     r: 255
-#     duration: 2000
-#     easing: 'easeInBounce'
-#     update: -> t1.update()
+  # click.on 'beat:2', (event)->
+  #   t1.set blue
+  #   anime 
+  #     targets: t1
+  #     red
+  #     duration: 2000
+  #     easing: 'easeIn'
+  #     update: -> t1.update()
+
+  # click.on 'beat:0', (event)->
+  #   # log 'beat', {bpm: click.bpm.toFixed(3), event}
+  #   t1.set {dimmer:255, r: 0, g:0, b:0, a:0, w:0, uv:0, tilt: 127}
+  #   anime 
+  #     targets: t1
+  #     r: 255
+  #     duration: 2000
+  #     easing: 'easeInBounce'
+  #     update: -> t1.update()
 
 
 click.on 'beat', (event)->
-  console.log 'beat', {
+  console.log {
     bpm: click.bpm.toFixed(3)
     bar: event.bar
     beat: event.beat
-    pos: event.position
-    intervalMs: event.intervalMillis?.toPrecision(2)
+    pos: event.pos
+    beatMs: Math.round(event.intervalMicros*24/1000)
   }

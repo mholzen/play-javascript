@@ -99,10 +99,14 @@ class Click extends EventEmitter
         if (@position % @ticks) == 0
           @bpm = 60/(deltaTime*24)
           @intervalMillis = ( 60.0 / @bpm ) / @ticks * 1000.0
+          @beatMs = @intervalMillis * 24
+          @barMs = @beatMs * 4
 
           @beat = Math.floor ( @position / @ticks ) % @bars
           @emit 'beat', @
           @emit 'beat:'+@beat, @
+          if @beat != 0
+            @emit 'beat:-'+(4-@beat), @
 
 
         return
