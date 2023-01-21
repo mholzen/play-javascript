@@ -36,17 +36,22 @@ t = new FixtureSet [t1, t2, t3, t4]
 f = new FixtureSet [f1, f2, f3, f4]
 s = new FixtureSet [t, f]
 
-try
-  log.debug 'trying to listen to midi click'
-  click = midi.click()
+# click = setupClick()
+click = new Clock()
 
-  console.log "midi clock detected: using it."
+setupClick = ->
+  try
+    log.debug 'trying to listen to midi click'
+    click = midi.click()
 
-catch error
-  log.error {message: error.message}
-  if error.message == 'no input midi ports'
-    console.log "no midi clock detected (no input ports):  using internal clock"
-    click = new Clock()
+    console.log "midi clock detected: using it."
+    return click
+
+  catch error
+    log.error {message: error.message}
+    if error.message == 'no input midi ports'
+      console.log "no midi clock detected (no input ports):  using internal clock"
+      return new Clock()
 
 
 module.exports = {

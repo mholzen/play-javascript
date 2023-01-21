@@ -8,6 +8,7 @@ readline = require 'readline'
 # Object.assign global, require '../lib/index'
 Object.assign global, require '../lib'
 Object.assign global, require '../scene'
+Object.assign global, require '../lib/functions'
 
 readline.emitKeypressEvents process.stdin
 
@@ -56,6 +57,7 @@ fs.watch rootFilename, load
 fs.watch './lib/colors.coffee', load
 fs.watch './lib/clock.coffee', load
 fs.watch './universe.json', load
+fs.watch './lib/functions.coffee', load
 load()
 
 process.on 'uncaughtException', (error)->

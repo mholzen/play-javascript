@@ -47,11 +47,16 @@ jitter = (array)->
     d += Math.abs v - array[i]
   d/(array.length-1)
 
-millisToBpm = (ms)->
-  f = 1000.0 / ms	# hz
-  t = f * 60		  # bpm
+millisToBpm = (intervalMs)->
+  f = 1000.0 / intervalMs # hz
+  t = f * 60              # bpm
+
+millisToRoundBpm = (intervalMs)->
+  digits = 1000
+  (Math.round (millisToBpm intervalMs) * digits) / digits
 
 class Series
+
   constructor: (@times)->
     @count = @times.length
     @intervals = intervals @times
@@ -59,7 +64,17 @@ class Series
     @average = average @intervals[1..]
     @median = median @intervals[1..]
     @iqm = iqm @intervals
-    @bpm = Math.round millisToBpm @iqm
+    @bpm = millisToRoundBpm @iqm
+
+    @bar_bpm = undefined
+    count = 16
+    if @count >= count
+      @bar_bpm = millisToRoundBpm @multi_beat_interval 4
+      @bar4_bpm = millisToRoundBpm @multi_beat_interval 4*4
+      @bar16_bpm = millisToRoundBpm @multi_beat_interval 4*16
+      @bar32_bpm = millisToRoundBpm @multi_beat_interval 4*32
+
+  multi_beat_interval: (length)-> (@times.at(-length-1) - @times.at(-1)) / length
   jitterString: -> "#{@jitter.toFixed(2)} [ms]"
   jitterPercentage: -> "#{(@jitter / @iqm).toFixed(2)}%"
 
@@ -89,14 +104,30 @@ process.stdin.on 'keypress', (str, key) ->
 
   # save a timestamp
   times.push (new Date()).getTime()
-  if times.length > 20
+  if times.length > 256   # enough for 64 bars (correct?)
     times.shift()
 
   result = new Series times
+  format_bar_bpm = (x)->
+    x = if x == undefined
+      "undefined"
+    else
+      x.toFixed(4)
+    x.padStart(20)
+
+  bar_bpm = (result)->
+    [ result.bar_bpm,
+      result.bar4_bpm
+      result.bar16_bpm
+      result.bar32_bpm ]
+    .map(format_bar_bpm)
+    .join()
+
   console.log
     count: result.count
-    jitter: result.jitterString()
-    percentage: result.jitterPercentage()
+    # jitter: result.jitterString()
+    # percentage: result.jitterPercentage()
     bpm: result.bpm
 
+    bar_bpm: bar_bpm result
   bpm = result.bpm

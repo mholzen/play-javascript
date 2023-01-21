@@ -42,6 +42,7 @@ for k, v of colors
   pink_white = {r: 255, g:127, b:64, a:30, w:0, uv:0}
   soft_white = {r: 255, g:120, b:0, a:37, w:72, uv:0}
   gold_white = {r: 255, g:127, b:0, a:36, w:72, uv:0}
+  white = {r: 128, g:128, b:128, a:0, w:255, uv:0}
   red_uv = {r:255, g:0, b:0, w: 0, uv:255}
   candle = {r: 100, g: 56, b: 6, a: 200, w: 10, uv:8 }
   green_brown = {r: 20, g: 255, b: 6, a: 100, w: 0, uv:8 }
@@ -49,6 +50,7 @@ for k, v of colors
   dark_orange = sum orange, black
   deep_orange = sum yellow, red, red
   dark_cyan = sum cyan, black
+  light_cyan = sum cyan, yellow
   dark_purple2 = sum purple, black
   dark_green2 = sum green, black
   dark_green3 = sum green, green, red, black
